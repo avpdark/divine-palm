@@ -59,6 +59,58 @@ const TRANSLATIONS = {
     reset: "تحليل روح أخرى",
     share: "شارك القدر",
     typePlaceholder: "قل حقيقتك...",
+  },
+  zh: {
+    welcome: "我感觉到一股气息……有人来了……",
+    fearNot: "不要害怕……我在这里揭示隐藏的一切……",
+    askName: "孩子，你叫什么名字？",
+    askDob: "告诉我你的出生日期……",
+    askGender: "揭示你的性别……",
+    askLeft: "现在……给我看你的左手掌……",
+    askRight: "现在……你的右手掌……",
+    reading: "正在读取你的命运……",
+    reset: "分析另一个灵魂",
+    share: "分享命运",
+    typePlaceholder: "说出你的真相……",
+  },
+  es: {
+    welcome: "Siento una presencia... alguien ha llegado...",
+    fearNot: "No temas... estoy aquí para revelar lo que está oculto...",
+    askName: "¿Cómo te llamas, hijo/a?",
+    askDob: "Dime tu fecha de nacimiento...",
+    askGender: "Revela tu género...",
+    askLeft: "Ahora... muéstrame tu palma izquierda...",
+    askRight: "Y ahora... tu palma derecha...",
+    reading: "Leyendo tu destino...",
+    reset: "Analizar otra alma",
+    share: "Compartir destino",
+    typePlaceholder: "Di tu verdad...",
+  },
+  de: {
+    welcome: "Ich spüre eine Präsenz... jemand ist angekommen...",
+    fearNot: "Fürchte dich nicht... ich bin hier, um zu enthüllen, was verborgen ist...",
+    askName: "Wie ist dein Name, mein Kind?",
+    askDob: "Nenne mir dein Geburtsdatum...",
+    askGender: "Enthülle dein Geschlecht...",
+    askLeft: "Nun... zeig mir deine linke Handfläche...",
+    askRight: "Und nun... deine rechte Handfläche...",
+    reading: "Dein Schicksal wird gelesen...",
+    reset: "Eine andere Seele analysieren",
+    share: "Schicksal teilen",
+    typePlaceholder: "Sprich deine Wahrheit...",
+  },
+  ru: {
+    welcome: "Я чувствую присутствие... кто-то пришел...",
+    fearNot: "Не бойся... я здесь, чтобы раскрыть сокровенное...",
+    askName: "Как тебя зовут, дитя?",
+    askDob: "Назови мне дату своего рождения...",
+    askGender: "Раскрой свой пол...",
+    askLeft: "Теперь... покажи мне свою левую ладонь...",
+    askRight: "А теперь... правую ладонь...",
+    reading: "Читаю твою судьбу...",
+    reset: "Анализировать другую душу",
+    share: "Поделиться судьбой",
+    typePlaceholder: "Скажи свою правду...",
   }
 };
 
@@ -233,20 +285,27 @@ export const Conversation: React.FC = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="glass-morphism p-8 max-w-md w-full"
+            className="glass-morphism p-6 md:p-8 max-w-lg w-full"
           >
-            <h2 className="text-3xl font-display text-mystic-gold mb-8">Choose your tongue</h2>
-            <div className="grid grid-cols-2 gap-4">
-              {(['en', 'ml', 'hi', 'ar'] as Language[]).map((lang) => (
+            <h2 className="text-2xl md:text-3xl font-display text-mystic-gold mb-6 md:mb-8">Choose your tongue</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4">
+              {(['en', 'ml', 'hi', 'ar', 'zh', 'es', 'de', 'ru'] as Language[]).map((lang) => (
                 <button
                   key={lang}
                   onClick={() => {
                     setLanguage(lang);
                     setStep('INTRO');
                   }}
-                  className="p-4 rounded-xl border border-white/10 hover:bg-mystic-gold/20 hover:border-mystic-gold transition-all font-display"
+                  className="p-3 md:p-4 rounded-xl border border-white/10 hover:bg-mystic-gold/20 hover:border-mystic-gold transition-all font-display text-xs md:text-sm"
                 >
-                  {lang === 'en' ? 'English' : lang === 'ml' ? 'മലയാളം' : lang === 'hi' ? 'हिन्दी' : 'العربية'}
+                  {lang === 'en' ? 'English' : 
+                   lang === 'ml' ? 'മലയാളം' : 
+                   lang === 'hi' ? 'हिन्दी' : 
+                   lang === 'ar' ? 'العربية' :
+                   lang === 'zh' ? '中文' :
+                   lang === 'es' ? 'Español' :
+                   lang === 'de' ? 'Deutsch' :
+                   'Русский'}
                 </button>
               ))}
             </div>
@@ -263,16 +322,16 @@ export const Conversation: React.FC = () => {
           >
             <div className="dialogue-container w-full">
               {step === 'CHAT' ? (
-                <div className="flex flex-col gap-4 max-h-[40vh] overflow-y-auto custom-scrollbar p-4">
+                <div className="flex flex-col gap-4 max-h-[35vh] md:max-h-[40vh] overflow-y-auto custom-scrollbar p-2 md:p-4">
                   {messages.map((msg, i) => (
                     <div 
                       key={i} 
                       className={cn(
-                        "p-4 rounded-2xl max-w-[80%] text-left",
+                        "p-3 md:p-4 rounded-2xl max-w-[90%] md:max-w-[80%] text-left",
                         msg.role === 'user' ? "bg-mystic-gold/10 ml-auto border border-mystic-gold/20" : "bg-white/5 mr-auto"
                       )}
                     >
-                      <p className={cn("text-sm", msg.role === 'model' ? "oracle-voice text-base" : "font-sans italic")}>
+                      <p className={cn("text-xs md:text-sm", msg.role === 'model' ? "oracle-voice !text-sm md:!text-base" : "font-sans italic")}>
                         {msg.text}
                       </p>
                     </div>
@@ -298,12 +357,12 @@ export const Conversation: React.FC = () => {
             </div>
 
             {step === 'ASK_GENDER' && (
-              <div className="flex gap-4">
+              <div className="flex flex-wrap justify-center gap-3 md:gap-4">
                 {['Male', 'Female', 'Other'].map((g) => (
                   <button
                     key={g}
                     onClick={() => handleNext(g)}
-                    className="px-8 py-2 rounded-full border border-mystic-gold/25 text-text-muted hover:bg-mystic-gold hover:text-bg-deep transition-all uppercase tracking-widest text-xs"
+                    className="px-6 md:px-8 py-2 rounded-full border border-mystic-gold/25 text-text-muted hover:bg-mystic-gold hover:text-bg-deep transition-all uppercase tracking-widest text-[10px] md:text-xs"
                   >
                     {g}
                   </button>
@@ -337,9 +396,9 @@ export const Conversation: React.FC = () => {
             )}
 
             {step !== 'ASK_LEFT_PALM' && step !== 'ASK_RIGHT_PALM' && step !== 'ASK_GENDER' && step !== 'INTRO' && (
-              <div className="w-full max-w-md mt-8">
+              <div className="w-full max-w-md mt-4 md:mt-8">
                 <div className="input-section">
-                  <div className="interaction-mode mb-4">
+                  <div className="interaction-mode mb-3 md:mb-4 flex justify-center gap-2">
                     <button 
                       onClick={() => setInputMode('voice')}
                       className={cn("mode-btn", inputMode === 'voice' && "active")}
@@ -354,7 +413,7 @@ export const Conversation: React.FC = () => {
                     </button>
                   </div>
 
-                  <div className="w-full flex items-center gap-2 glass-morphism p-2">
+                  <div className="w-full flex items-center gap-2 glass-morphism p-1.5 md:p-2">
                     {inputMode === 'text' ? (
                       <input 
                         type="text"
@@ -362,18 +421,18 @@ export const Conversation: React.FC = () => {
                         onChange={(e) => setTextInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && (step === 'CHAT' || step === 'RESULTS' ? handleChat(textInput) : handleNext(textInput))}
                         placeholder={t.typePlaceholder}
-                        className="flex-1 bg-transparent border-none outline-none text-text-main px-4 py-2 font-georgia italic"
+                        className="flex-1 bg-transparent border-none outline-none text-text-main px-3 md:px-4 py-1.5 md:py-2 font-georgia italic text-sm md:text-base"
                         autoFocus
                       />
                     ) : (
                       <button 
                         onClick={startListening}
                         className={cn(
-                          "flex-1 text-left px-4 py-2 text-text-muted font-georgia italic",
+                          "flex-1 text-left px-3 md:px-4 py-1.5 md:py-2 text-text-muted font-georgia italic text-sm md:text-base",
                           isListening && "text-mystic-gold animate-pulse"
                         )}
                       >
-                        {isListening ? "Listening to the universe..." : "Tap to speak..."}
+                        {isListening ? "Listening..." : "Tap to speak..."}
                       </button>
                     )}
 
@@ -425,13 +484,13 @@ export const Conversation: React.FC = () => {
             key="results"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="glass-morphism p-8 max-w-4xl w-full max-h-[80vh] overflow-y-auto custom-scrollbar"
+            className="glass-morphism p-5 md:p-8 max-w-4xl w-full max-h-[85vh] overflow-y-auto custom-scrollbar"
           >
-            <h2 className="text-4xl font-display text-mystic-gold mb-8 border-b border-mystic-gold/20 pb-4">
+            <h2 className="text-2xl md:text-4xl font-display text-mystic-gold mb-6 md:mb-8 border-b border-mystic-gold/20 pb-4">
               Thy Destiny Revealed
             </h2>
             
-            <div className="space-y-8 text-left">
+            <div className="space-y-6 md:space-y-8 text-left">
               <ResultSection title="Inner Soul" content={result.personality} delay={0.2} />
               <ResultSection title="The Journey" content={result.lifePath} delay={0.4} />
               <ResultSection title="Heart's Echo" content={result.love} delay={0.6} />
@@ -440,39 +499,39 @@ export const Conversation: React.FC = () => {
               <ResultSection title="Cosmic Whispers" content={result.warnings} delay={1.2} />
             </div>
 
-            <div className="mt-12 flex flex-wrap justify-center gap-4">
+            <div className="mt-8 md:mt-12 flex flex-wrap justify-center gap-4">
               <div className="w-full max-w-md mb-4">
-                <p className="text-xs text-text-muted mb-4 uppercase tracking-widest">Ask the Oracle more...</p>
-                <div className="w-full flex items-center gap-2 glass-morphism p-2">
+                <p className="text-[10px] md:text-xs text-text-muted mb-3 md:mb-4 uppercase tracking-widest">Ask the Oracle more...</p>
+                <div className="w-full flex items-center gap-2 glass-morphism p-1.5 md:p-2">
                   <input 
                     type="text"
                     value={textInput}
                     onChange={(e) => setTextInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleChat(textInput)}
                     placeholder="What else do you wish to know?"
-                    className="flex-1 bg-transparent border-none outline-none text-text-main px-4 py-2 font-georgia italic"
+                    className="flex-1 bg-transparent border-none outline-none text-text-main px-3 md:px-4 py-1.5 md:py-2 font-georgia italic text-sm md:text-base"
                   />
                   <button 
                     onClick={() => handleChat(textInput)}
-                    className="p-3 text-mystic-gold hover:bg-white/5 rounded-full"
+                    className="p-2 md:p-3 text-mystic-gold hover:bg-white/5 rounded-full"
                   >
-                    <Send size={20} />
+                    <Send size={18} md:size={20} />
                   </button>
                 </div>
               </div>
-              <div className="flex gap-4 w-full justify-center">
+              <div className="flex flex-col sm:flex-row gap-3 md:gap-4 w-full justify-center">
                 <button 
                   onClick={reset}
-                  className="flex items-center gap-2 px-6 py-3 border border-mystic-gold text-mystic-gold rounded-full hover:bg-mystic-gold hover:text-black transition-all"
+                  className="flex items-center justify-center gap-2 px-6 py-2.5 md:py-3 border border-mystic-gold text-mystic-gold rounded-full hover:bg-mystic-gold hover:text-black transition-all text-sm"
                 >
-                  <RefreshCw size={20} />
+                  <RefreshCw size={18} />
                   {t.reset}
                 </button>
                 <button 
                   onClick={shareDestiny}
-                  className="flex items-center gap-2 px-6 py-3 bg-mystic-gold text-black rounded-full hover:scale-105 transition-transform"
+                  className="flex items-center justify-center gap-2 px-6 py-2.5 md:py-3 bg-mystic-gold text-black rounded-full hover:scale-105 transition-transform text-sm"
                 >
-                  <Share2 size={20} />
+                  <Share2 size={18} />
                   {t.share}
                 </button>
               </div>

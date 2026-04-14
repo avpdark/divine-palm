@@ -29,7 +29,7 @@ export const PalmUpload: React.FC<PalmUploadProps> = ({ label, onUpload, image, 
       <div 
         onClick={() => !image && fileInputRef.current?.click()}
         className={cn(
-          "relative w-96 h-32 border border-dashed border-gold-glow bg-mystic-gold/5 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-all hover:bg-mystic-gold/10",
+          "relative w-full max-w-sm h-32 border border-dashed border-gold-glow bg-mystic-gold/5 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-all hover:bg-mystic-gold/10",
           image && "border-solid border-mystic-gold/50"
         )}
       >
