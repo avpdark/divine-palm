@@ -1,7 +1,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { UserData, ReadingResult, Language } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+const GEMINI_KEY = process.env.GEMINI_API_KEY || "AIzaSyAeUJAfXD76rO9DENIcqEHyPGVn8f-kQsI";
+const ai = new GoogleGenAI({ apiKey: GEMINI_KEY });
 
 const SYSTEM_PROMPT = `You are a divine oracle, an ancient spiritual being. 
 You speak with calm, wisdom, and mystery. 
@@ -14,11 +15,7 @@ Always:
 Never sound robotic or technical.`;
 
 export async function getOracleReading(userData: UserData, language: Language): Promise<ReadingResult> {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error("The cosmic key is missing. Please provide the Gemini API key in secrets.");
-  }
-
-  const model = "gemini-1.5-flash";
+  const model = "gemini-3-flash-preview";
   
   const prompt = `
     Analyze this soul's destiny based on their details and palm images.
@@ -85,5 +82,36 @@ export async function getOracleReading(userData: UserData, language: Language): 
   } catch (error) {
     console.error("Oracle failed to reveal destiny:", error);
     throw new Error("The cosmic connection was interrupted...");
+  }
+}
+
+export async function getOracleChatResponse(
+  history: { role: 'user' | 'model'; text: string }[],
+  userData: UserData,
+  language: Language
+): Promise<string> {
+  const model = "gemini-3-flash-preview";
+  
+  const systemInstruction = SYSTEM_PROMPT + `\n\nContext: You have already given a palm reading to ${userData.name} (Born: ${userData.dob}, Gender: ${userData.gender}). 
+    Continue the conversation as the Oracle. Answer their questions about their fate, life, or the reading you gave. 
+    Keep the mystical tone. Respond in ${language}.`;
+
+  const contents = history.map(msg => ({
+    role: msg.role,
+    parts: [{ text: msg.text }]
+  }));
+
+  try {
+    const response = await ai.models.generateContent({
+      model,
+      contents,
+      config: {
+        systemInstruction
+      }
+    });
+    return response.text || "The stars are silent...";
+  } catch (error) {
+    console.error("Oracle chat failed:", error);
+    return "The stars are silent for a moment... ask again, seeker.";
   }
 }

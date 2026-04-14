@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mic, Send, Keyboard, RefreshCw, Share2 } from 'lucide-react';
-import { Step, UserData, Language, ReadingResult } from '../types';
+import { Step, UserData, Language, ReadingResult, ChatMessage } from '../types';
 import { useOracleSpeech } from '../hooks/useOracleSpeech';
 import { PalmUpload } from './PalmUpload';
-import { getOracleReading } from '../services/gemini';
+import { getOracleReading, getOracleChatResponse } from '../services/gemini';
 import { cn } from '../lib/utils';
 
 const TRANSLATIONS = {
@@ -76,6 +76,7 @@ export const Conversation: React.FC = () => {
   });
   const [result, setResult] = useState<ReadingResult | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   const { speak, startListening, isListening, transcript, setTranscript } = useOracleSpeech(language);
 
@@ -105,10 +106,18 @@ export const Conversation: React.FC = () => {
         setStep('ASK_RIGHT_PALM');
         break;
       case 'ASK_RIGHT_PALM':
-        processReading();
+        if (step === 'ASK_RIGHT_PALM' && !isProcessing) {
+          processReading();
+        }
+        break;
+      case 'RESULTS':
+      case 'CHAT':
+        if (value) {
+          handleChat(value);
+        }
         break;
     }
-  }, [step]);
+  }, [step, isProcessing]);
 
   useEffect(() => {
     if (transcript) {
@@ -165,6 +174,28 @@ export const Conversation: React.FC = () => {
     }
   };
 
+  const handleChat = async (text: string) => {
+    if (!text.trim() || isProcessing) return;
+    
+    const userMsg: ChatMessage = { role: 'user', text };
+    const newMessages = [...messages, userMsg];
+    setMessages(newMessages);
+    setIsProcessing(true);
+    setTextInput('');
+
+    try {
+      const response = await getOracleChatResponse(newMessages, userData, language);
+      const modelMsg: ChatMessage = { role: 'model', text: response };
+      setMessages(prev => [...prev, modelMsg]);
+      speak(response);
+      setStep('CHAT');
+    } catch (error) {
+      console.error("Chat error:", error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const shareDestiny = () => {
     if (!result) return;
     const text = `My Destiny as revealed by the Divine Palm Oracle:\n\n${result.destiny}\n\nSeek your own fate at ${window.location.href}`;
@@ -190,6 +221,7 @@ export const Conversation: React.FC = () => {
       rightPalm: null,
     });
     setResult(null);
+    setMessages([]);
   };
 
   return (
@@ -221,7 +253,7 @@ export const Conversation: React.FC = () => {
           </motion.div>
         )}
 
-        {(step === 'INTRO' || step.startsWith('ASK_')) && (
+        {(step === 'INTRO' || step.startsWith('ASK_') || step === 'CHAT') && (
           <motion.div 
             key="convo"
             initial={{ opacity: 0 }}
@@ -229,15 +261,40 @@ export const Conversation: React.FC = () => {
             exit={{ opacity: 0 }}
             className="flex flex-col items-center gap-8 w-full max-w-2xl"
           >
-            <div className="dialogue-container">
-              <p className="oracle-voice">
-                {step === 'INTRO' ? t.welcome : 
-                 step === 'ASK_NAME' ? t.askName :
-                 step === 'ASK_DOB' ? t.askDob :
-                 step === 'ASK_GENDER' ? t.askGender :
-                 step === 'ASK_LEFT_PALM' ? t.askLeft :
-                 t.askRight}
-              </p>
+            <div className="dialogue-container w-full">
+              {step === 'CHAT' ? (
+                <div className="flex flex-col gap-4 max-h-[40vh] overflow-y-auto custom-scrollbar p-4">
+                  {messages.map((msg, i) => (
+                    <div 
+                      key={i} 
+                      className={cn(
+                        "p-4 rounded-2xl max-w-[80%] text-left",
+                        msg.role === 'user' ? "bg-mystic-gold/10 ml-auto border border-mystic-gold/20" : "bg-white/5 mr-auto"
+                      )}
+                    >
+                      <p className={cn("text-sm", msg.role === 'model' ? "oracle-voice text-base" : "font-sans italic")}>
+                        {msg.text}
+                      </p>
+                    </div>
+                  ))}
+                  {isProcessing && (
+                    <div className="flex gap-2 mr-auto">
+                      <div className="w-2 h-2 bg-mystic-gold rounded-full animate-bounce" />
+                      <div className="w-2 h-2 bg-mystic-gold rounded-full animate-bounce [animation-delay:0.2s]" />
+                      <div className="w-2 h-2 bg-mystic-gold rounded-full animate-bounce [animation-delay:0.4s]" />
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="oracle-voice">
+                  {step === 'INTRO' ? t.welcome : 
+                   step === 'ASK_NAME' ? t.askName :
+                   step === 'ASK_DOB' ? t.askDob :
+                   step === 'ASK_GENDER' ? t.askGender :
+                   step === 'ASK_LEFT_PALM' ? t.askLeft :
+                   t.askRight}
+                </p>
+              )}
             </div>
 
             {step === 'ASK_GENDER' && (
@@ -303,7 +360,7 @@ export const Conversation: React.FC = () => {
                         type="text"
                         value={textInput}
                         onChange={(e) => setTextInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && (handleNext(textInput), setTextInput(''))}
+                        onKeyDown={(e) => e.key === 'Enter' && (step === 'CHAT' || step === 'RESULTS' ? handleChat(textInput) : handleNext(textInput))}
                         placeholder={t.typePlaceholder}
                         className="flex-1 bg-transparent border-none outline-none text-text-main px-4 py-2 font-georgia italic"
                         autoFocus
@@ -322,7 +379,14 @@ export const Conversation: React.FC = () => {
 
                     {inputMode === 'text' && (
                       <button 
-                        onClick={() => { handleNext(textInput); setTextInput(''); }}
+                        onClick={() => { 
+                          if (step === 'CHAT' || step === 'RESULTS') {
+                            handleChat(textInput);
+                          } else {
+                            handleNext(textInput);
+                            setTextInput('');
+                          }
+                        }}
                         className="p-3 text-mystic-gold hover:bg-white/5 rounded-full"
                       >
                         <Send size={20} />
@@ -330,6 +394,15 @@ export const Conversation: React.FC = () => {
                     )}
                   </div>
                 </div>
+                
+                {step === 'CHAT' && (
+                  <button 
+                    onClick={reset}
+                    className="mt-6 text-[10px] uppercase tracking-widest text-mystic-gold/50 hover:text-mystic-gold transition-colors"
+                  >
+                    {t.reset}
+                  </button>
+                )}
               </div>
             )}
           </motion.div>
@@ -368,20 +441,41 @@ export const Conversation: React.FC = () => {
             </div>
 
             <div className="mt-12 flex flex-wrap justify-center gap-4">
-              <button 
-                onClick={reset}
-                className="flex items-center gap-2 px-6 py-3 border border-mystic-gold text-mystic-gold rounded-full hover:bg-mystic-gold hover:text-black transition-all"
-              >
-                <RefreshCw size={20} />
-                {t.reset}
-              </button>
-              <button 
-                onClick={shareDestiny}
-                className="flex items-center gap-2 px-6 py-3 bg-mystic-gold text-black rounded-full hover:scale-105 transition-transform"
-              >
-                <Share2 size={20} />
-                {t.share}
-              </button>
+              <div className="w-full max-w-md mb-4">
+                <p className="text-xs text-text-muted mb-4 uppercase tracking-widest">Ask the Oracle more...</p>
+                <div className="w-full flex items-center gap-2 glass-morphism p-2">
+                  <input 
+                    type="text"
+                    value={textInput}
+                    onChange={(e) => setTextInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleChat(textInput)}
+                    placeholder="What else do you wish to know?"
+                    className="flex-1 bg-transparent border-none outline-none text-text-main px-4 py-2 font-georgia italic"
+                  />
+                  <button 
+                    onClick={() => handleChat(textInput)}
+                    className="p-3 text-mystic-gold hover:bg-white/5 rounded-full"
+                  >
+                    <Send size={20} />
+                  </button>
+                </div>
+              </div>
+              <div className="flex gap-4 w-full justify-center">
+                <button 
+                  onClick={reset}
+                  className="flex items-center gap-2 px-6 py-3 border border-mystic-gold text-mystic-gold rounded-full hover:bg-mystic-gold hover:text-black transition-all"
+                >
+                  <RefreshCw size={20} />
+                  {t.reset}
+                </button>
+                <button 
+                  onClick={shareDestiny}
+                  className="flex items-center gap-2 px-6 py-3 bg-mystic-gold text-black rounded-full hover:scale-105 transition-transform"
+                >
+                  <Share2 size={20} />
+                  {t.share}
+                </button>
+              </div>
             </div>
           </motion.div>
         )}

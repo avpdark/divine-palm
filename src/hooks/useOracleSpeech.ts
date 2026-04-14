@@ -26,8 +26,8 @@ export function useOracleSpeech(language: Language) {
     const voice = getBestVoice();
     if (voice) utterance.voice = voice;
     
-    utterance.pitch = 0.8; // Deeper, more mystical
-    utterance.rate = 0.9;  // Slower
+    utterance.pitch = 1.0; // More natural and relaxed
+    utterance.rate = 0.85; // Slightly slower and calmer
     utterance.volume = 1;
 
     window.speechSynthesis.speak(utterance);

@@ -19,7 +19,13 @@ export type Step =
   | 'ASK_LEFT_PALM'
   | 'ASK_RIGHT_PALM'
   | 'READING'
-  | 'RESULTS';
+  | 'RESULTS'
+  | 'CHAT';
+
+export interface ChatMessage {
+  role: 'user' | 'model';
+  text: string;
+}
 
 export interface ReadingResult {
   personality: string;
