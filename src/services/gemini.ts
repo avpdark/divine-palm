@@ -23,7 +23,7 @@ Tone: Mystical yet grounded in reality. Poetic but extremely useful.
 Language: Respond in the requested language. If Malayalam, use a mix of traditional poetic style and modern practical advice.`;
 
 export async function getOracleReading(userData: UserData, language: Language): Promise<ReadingResult> {
-  const model = "gemini-3-flash-preview";
+  const model = "gemini-flash-latest";
   
   const prompt = `
     Analyze this soul's destiny based on their details and palm images.
@@ -99,6 +99,9 @@ export async function getOracleReading(userData: UserData, language: Language): 
     return JSON.parse(response.text || "{}");
   } catch (error: any) {
     console.error("Oracle failed to reveal destiny:", error);
+    if (error.message?.includes("403")) {
+      throw new Error("The Oracle's sanctuary is currently restricted. Please check your cosmic permissions (API Key).");
+    }
     if (error.message?.includes("429")) {
       throw new Error("The cosmic energy is depleted for now. Please wait a moment, seeker.");
     }
@@ -114,7 +117,7 @@ export async function getOracleChatResponse(
   userData: UserData,
   language: Language
 ): Promise<string> {
-  const model = "gemini-3-flash-preview";
+  const model = "gemini-flash-latest";
   
   const systemInstruction = SYSTEM_PROMPT + `\n\nContext: You have already given a palm reading to ${userData.name} (Born: ${userData.dob}, Gender: ${userData.gender}). 
     Continue the conversation as the Oracle. Answer their questions about their fate, life, or the reading you gave. 
