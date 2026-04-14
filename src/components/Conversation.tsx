@@ -156,8 +156,9 @@ export const Conversation: React.FC = () => {
       // Narrate the results
       const fullText = `${reading.personality}. ${reading.lifePath}. ${reading.destiny}`;
       speak(fullText);
-    } catch (error) {
-      alert("The cosmic strings are tangled. Please try again.");
+    } catch (error: any) {
+      console.error("Oracle error:", error);
+      alert(error.message || "The cosmic strings are tangled. Please try again.");
       setStep('ASK_RIGHT_PALM');
     } finally {
       setIsProcessing(false);

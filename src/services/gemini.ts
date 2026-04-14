@@ -14,7 +14,11 @@ Always:
 Never sound robotic or technical.`;
 
 export async function getOracleReading(userData: UserData, language: Language): Promise<ReadingResult> {
-  const model = "gemini-3-flash-preview";
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error("The cosmic key is missing. Please provide the Gemini API key in secrets.");
+  }
+
+  const model = "gemini-1.5-flash";
   
   const prompt = `
     Analyze this soul's destiny based on their details and palm images.

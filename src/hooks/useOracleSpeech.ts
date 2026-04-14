@@ -12,12 +12,18 @@ export function useOracleSpeech(language: Language) {
     const utterance = new SpeechSynthesisUtterance(text);
     
     // Set voice based on language
-    const voices = window.speechSynthesis.getVoices();
-    let voice = voices.find(v => v.lang.startsWith(language));
-    
-    // Fallback to English if specific language voice not found
-    if (!voice) voice = voices.find(v => v.lang.startsWith('en'));
-    
+    const getBestVoice = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length === 0) return null;
+
+      // Try to find a voice that matches language and is high quality
+      let voice = voices.find(v => v.lang.startsWith(language) && !v.localService);
+      if (!voice) voice = voices.find(v => v.lang.startsWith(language));
+      if (!voice) voice = voices.find(v => v.lang.startsWith('en'));
+      return voice;
+    };
+
+    const voice = getBestVoice();
     if (voice) utterance.voice = voice;
     
     utterance.pitch = 0.8; // Deeper, more mystical

@@ -1,6 +1,6 @@
 {
   "name": "Divine Palm Oracle",
   "description": "An immersive spiritual experience where an ancient oracle reveals your destiny through palmistry and divine wisdom.",
-  "requestFramePermissions": ["camera"],
+  "requestFramePermissions": ["camera", "microphone"],
   "majorCapabilities": []
 }
