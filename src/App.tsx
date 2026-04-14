@@ -7,6 +7,7 @@ import { PalmUpload } from './components/PalmUpload';
 import { Processing } from './components/Processing';
 import { ResultView } from './components/ResultView';
 import { FollowUpChat } from './components/FollowUpChat';
+import { CharacterAvatar } from './components/CharacterAvatar';
 import { ai, ANALYSIS_PROMPT, SYSTEM_PROMPT } from './lib/gemini';
 import { Volume2, VolumeX } from 'lucide-react';
 import { Language } from './types';
@@ -19,9 +20,11 @@ function App() {
   const [userData, setUserData] = useState({ name: '', dob: '', gender: '', problem: '' });
   const [reading, setReading] = useState<string | null>(null);
   const [isAudioOn, setIsAudioOn] = useState(false);
+  const [isOracleTyping, setIsOracleTyping] = useState(false);
 
   const startAnalysis = async (left: string, right: string) => {
     setState('processing');
+    setIsOracleTyping(true);
     
     try {
       const langName = {
@@ -47,7 +50,7 @@ function App() {
           ]}
         ],
         config: {
-          systemInstruction: SYSTEM_PROMPT,
+          systemInstruction: SYSTEM_PROMPT(langName || 'English'),
           temperature: 0.7,
           topP: 0.9,
         }
@@ -59,6 +62,8 @@ function App() {
       console.error("Analysis error:", error);
       setReading("I apologize, the divine connection was interrupted. Please try again.");
       setState('result');
+    } finally {
+      setIsOracleTyping(false);
     }
   };
 
@@ -79,7 +84,7 @@ function App() {
         <select 
           value={language}
           onChange={(e) => setLanguage(e.target.value as Language)}
-          className="bg-black/40 backdrop-blur-md border border-white/10 rounded-full px-4 py-2 text-xs uppercase tracking-widest focus:outline-none focus:border-orange-500/50"
+          className="bg-black/60 backdrop-blur-xl border border-white/20 rounded-full px-3 py-1.5 md:px-4 md:py-2 text-[10px] md:text-xs uppercase tracking-widest focus:outline-none focus:border-orange-500/50 transition-all appearance-none cursor-pointer"
         >
           <option value="en">English</option>
           <option value="ml">മലയാളം</option>
@@ -92,7 +97,7 @@ function App() {
         </select>
       </div>
 
-      <main className="container mx-auto px-6 py-12 relative z-10">
+      <main className="container mx-auto px-4 md:px-6 py-6 md:py-12 relative z-10 max-w-4xl">
         <AnimatePresence mode="wait">
           {state === 'landing' && (
             <motion.div
@@ -101,7 +106,9 @@ function App() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.8 }}
+              className="flex flex-col items-center"
             >
+              <CharacterAvatar isTyping={isOracleTyping} />
               <Landing onStart={() => setState('chat')} />
             </motion.div>
           )}
@@ -112,13 +119,16 @@ function App() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
+              className="flex flex-col items-center"
             >
+              <CharacterAvatar isTyping={isOracleTyping} />
               <ChatFlow 
                 language={language}
                 onComplete={(data) => {
                   setUserData(data);
                   setState('upload');
                 }} 
+                onTyping={setIsOracleTyping}
               />
             </motion.div>
           )}
@@ -151,19 +161,21 @@ function App() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <ResultView result={reading || ''} />
+              <ResultView result={reading || ''} language={language} />
               <FollowUpChat 
                 initialContext={reading || ''} 
                 language={language}
+                onTyping={setIsOracleTyping}
               />
               
-              <div className="flex justify-center mt-12">
+              <div className="flex flex-col items-center mt-12 gap-4">
                 <button 
                   onClick={() => window.location.reload()}
-                  className="text-white/40 hover:text-white/80 text-xs uppercase tracking-widest transition-all"
+                  className="px-8 py-3 bg-orange-600 hover:bg-orange-500 text-white rounded-full font-medium shadow-lg shadow-orange-600/20 transition-all active:scale-95"
                 >
                   Begin a New Journey
                 </button>
+                <p className="text-[10px] uppercase tracking-widest text-white/30">The Oracle awaits your return</p>
               </div>
             </motion.div>
           )}

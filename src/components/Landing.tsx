@@ -8,32 +8,18 @@ interface LandingProps {
 
 export const Landing: React.FC<LandingProps> = ({ onStart }) => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[80vh] text-center space-y-12 px-6">
+    <div className="flex flex-col items-center justify-center min-h-[50vh] text-center space-y-8 px-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1 }}
-        className="space-y-6"
+        className="space-y-4"
       >
-        <div className="flex justify-center mb-8">
-          <motion.div
-            animate={{ 
-              rotate: [0, 5, -5, 0],
-              scale: [1, 1.05, 1]
-            }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-            className="relative"
-          >
-            <div className="absolute inset-0 bg-orange-500/20 blur-3xl rounded-full" />
-            <Sparkles className="w-24 h-24 text-orange-500 relative z-10" />
-          </motion.div>
-        </div>
-        
-        <h1 className="text-6xl md:text-8xl font-light tracking-tighter mystic-text">
+        <h1 className="text-5xl md:text-8xl font-light tracking-tighter mystic-text">
           Divine <span className="text-orange-500 italic">Oracle</span>
         </h1>
         
-        <p className="max-w-xl mx-auto text-lg md:text-xl text-white/60 font-light leading-relaxed">
+        <p className="max-w-xl mx-auto text-base md:text-xl text-white/60 font-light leading-relaxed">
           Step into the sanctuary of wisdom. Let the ancient art of palmistry 
           reveal the hidden patterns of your soul and guide your path forward.
         </p>

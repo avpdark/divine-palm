@@ -40,7 +40,7 @@ export const PalmUpload: React.FC<PalmUploadProps> = ({ onUpload }) => {
             onChange={(e) => handleFileChange(e, 'left')}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
           />
-          <div className={`h-64 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all duration-500 ${leftPalm ? 'border-orange-500/50 bg-orange-500/5' : 'border-white/10 bg-white/5 group-hover:border-white/20'}`}>
+          <div className={`h-48 md:h-64 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all duration-500 ${leftPalm ? 'border-orange-500/50 bg-orange-500/5' : 'border-white/10 bg-white/5 group-hover:border-white/20'}`}>
             {leftPalm ? (
               <img src={leftPalm} alt="Left Palm" className="w-full h-full object-cover rounded-2xl" />
             ) : (
@@ -69,7 +69,7 @@ export const PalmUpload: React.FC<PalmUploadProps> = ({ onUpload }) => {
             onChange={(e) => handleFileChange(e, 'right')}
             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
           />
-          <div className={`h-64 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all duration-500 ${rightPalm ? 'border-orange-500/50 bg-orange-500/5' : 'border-white/10 bg-white/5 group-hover:border-white/20'}`}>
+          <div className={`h-48 md:h-64 rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all duration-500 ${rightPalm ? 'border-orange-500/50 bg-orange-500/5' : 'border-white/10 bg-white/5 group-hover:border-white/20'}`}>
             {rightPalm ? (
               <img src={rightPalm} alt="Right Palm" className="w-full h-full object-cover rounded-2xl" />
             ) : (

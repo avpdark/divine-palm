@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles } from 'lucide-react';
+import { CharacterAvatar } from './CharacterAvatar';
 
 export const Processing: React.FC = () => {
   const [textIndex, setTextIndex] = useState(0);
@@ -21,7 +22,9 @@ export const Processing: React.FC = () => {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-12">
+    <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-8 md:space-y-12">
+      <CharacterAvatar isTyping={true} />
+      
       <div className="relative">
         <motion.div
           animate={{
