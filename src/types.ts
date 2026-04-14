@@ -1,4 +1,4 @@
-export type Language = 'en' | 'ml' | 'hi' | 'ar';
+export type Language = 'en' | 'ml' | 'hi' | 'ar' | 'zh' | 'de' | 'km' | 'es';
 
 export type Gender = 'Male' | 'Female' | 'Other';
 
