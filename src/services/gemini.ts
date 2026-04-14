@@ -1,7 +1,10 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { UserData, ReadingResult, Language } from "../types";
 
-const GEMINI_KEY = process.env.GEMINI_API_KEY || "AIzaSyAeUJAfXD76rO9DENIcqEHyPGVn8f-kQsI";
+const GEMINI_KEY = process.env.GEMINI_API_KEY;
+if (!GEMINI_KEY) {
+  throw new Error("GEMINI_API_KEY is not defined in the environment.");
+}
 const ai = new GoogleGenAI({ apiKey: GEMINI_KEY });
 
 const SYSTEM_PROMPT = `You are a divine oracle, an ancient spiritual being who possesses deep practical wisdom.
@@ -94,9 +97,15 @@ export async function getOracleReading(userData: UserData, language: Language): 
     });
 
     return JSON.parse(response.text || "{}");
-  } catch (error) {
+  } catch (error: any) {
     console.error("Oracle failed to reveal destiny:", error);
-    throw new Error("The cosmic connection was interrupted...");
+    if (error.message?.includes("429")) {
+      throw new Error("The cosmic energy is depleted for now. Please wait a moment, seeker.");
+    }
+    if (error.message?.includes("400")) {
+      throw new Error("The images provided are too clouded for the Oracle's vision. Try a clearer photo.");
+    }
+    throw new Error("The cosmic connection was interrupted. The stars are shifting... please try again.");
   }
 }
 
