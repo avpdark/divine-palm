@@ -1,0 +1,402 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Mic, Send, Keyboard, RefreshCw, Share2 } from 'lucide-react';
+import { Step, UserData, Language, ReadingResult } from '../types';
+import { useOracleSpeech } from '../hooks/useOracleSpeech';
+import { PalmUpload } from './PalmUpload';
+import { getOracleReading } from '../services/gemini';
+import { cn } from '../lib/utils';
+
+const TRANSLATIONS = {
+  en: {
+    welcome: "I sense a presence… someone has arrived…",
+    fearNot: "Do not fear… I am here to reveal what is hidden…",
+    askName: "What is your name, child?",
+    askDob: "Tell me the date of your birth...",
+    askGender: "Reveal your gender…",
+    askLeft: "Now… show me your left palm…",
+    askRight: "And now… your right palm…",
+    reading: "Reading your destiny...",
+    reset: "Analyze Another Soul",
+    share: "Share Destiny",
+    typePlaceholder: "Speak your truth...",
+  },
+  ml: {
+    welcome: "ഒരു സാന്നിധ്യം ഞാൻ അറിയുന്നു... ആരോ വന്നിരിക്കുന്നു...",
+    fearNot: "ഭയപ്പെടേണ്ട... മറഞ്ഞിരിക്കുന്നത് വെളിപ്പെടുത്താൻ ഞാൻ ഇവിടെയുണ്ട്...",
+    askName: "നിന്റെ പേരെന്താണ്, മകനേ/മകളേ?",
+    askDob: "നിന്റെ ജനനത്തീയതി പറയൂ...",
+    askGender: "നിന്റെ ലിംഗഭേദം വെളിപ്പെടുത്തൂ...",
+    askLeft: "ഇനി... നിന്റെ ഇടതുകൈ കാണിക്കൂ...",
+    askRight: "ഇനി... നിന്റെ വലതുകൈ കാണിക്കൂ...",
+    reading: "നിന്റെ വിധി വായിക്കുന്നു...",
+    reset: "മറ്റൊരു ആത്മാവിനെ വിശകലനം ചെയ്യുക",
+    share: "വിധി പങ്കിടുക",
+    typePlaceholder: "നിന്റെ സത്യം പറയൂ...",
+  },
+  hi: {
+    welcome: "मुझे एक उपस्थिति महसूस हो रही है... कोई आया है...",
+    fearNot: "डरो मत... मैं यहाँ वह प्रकट करने के लिए हूँ जो छिपा है...",
+    askName: "बच्चे, तुम्हारा नाम क्या है?",
+    askDob: "मुझे अपनी जन्म तिथि बताओ...",
+    askGender: "अपना लिंग प्रकट करें...",
+    askLeft: "अब... मुझे अपनी बाईं हथेली दिखाओ...",
+    askRight: "और अब... अपनी दाहिनी हथेली...",
+    reading: "तुम्हारी नियति पढ़ रहा हूँ...",
+    reset: "एक और आत्मा का विश्लेषण करें",
+    share: "नियति साझा करें",
+    typePlaceholder: "अपनी सच्चाई बताओ...",
+  },
+  ar: {
+    welcome: "أشعر بوجود... شخص ما قد وصل...",
+    fearNot: "لا تخف... أنا هنا لأكشف ما هو مخفي...",
+    askName: "ما اسمك يا بني؟",
+    askDob: "أخبرني بتاريخ ميلادك...",
+    askGender: "اكشف عن جنسك...",
+    askLeft: "الآن... أرني كفك الأيسر...",
+    askRight: "والآن... كفك الأيمن...",
+    reading: "أقرأ قدرك...",
+    reset: "تحليل روح أخرى",
+    share: "شارك القدر",
+    typePlaceholder: "قل حقيقتك...",
+  }
+};
+
+export const Conversation: React.FC = () => {
+  const [language, setLanguage] = useState<Language>('en');
+  const [step, setStep] = useState<Step>('LANGUAGE_SELECT');
+  const [inputMode, setInputMode] = useState<'voice' | 'text'>('voice');
+  const [textInput, setTextInput] = useState('');
+  const [userData, setUserData] = useState<UserData>({
+    name: '',
+    dob: '',
+    gender: 'Other',
+    leftPalm: null,
+    rightPalm: null,
+  });
+  const [result, setResult] = useState<ReadingResult | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const { speak, startListening, isListening, transcript, setTranscript } = useOracleSpeech(language);
+
+  const t = TRANSLATIONS[language];
+
+  const handleNext = useCallback((value?: string) => {
+    switch (step) {
+      case 'ASK_NAME':
+        if (value) {
+          setUserData(prev => ({ ...prev, name: value }));
+          setStep('ASK_DOB');
+        }
+        break;
+      case 'ASK_DOB':
+        if (value) {
+          setUserData(prev => ({ ...prev, dob: value }));
+          setStep('ASK_GENDER');
+        }
+        break;
+      case 'ASK_GENDER':
+        if (value) {
+          setUserData(prev => ({ ...prev, gender: value as any }));
+          setStep('ASK_LEFT_PALM');
+        }
+        break;
+      case 'ASK_LEFT_PALM':
+        setStep('ASK_RIGHT_PALM');
+        break;
+      case 'ASK_RIGHT_PALM':
+        processReading();
+        break;
+    }
+  }, [step]);
+
+  useEffect(() => {
+    if (transcript) {
+      handleNext(transcript);
+      setTranscript('');
+    }
+  }, [transcript, handleNext, setTranscript]);
+
+  useEffect(() => {
+    if (step === 'INTRO') {
+      speak(t.welcome + " " + t.fearNot);
+      setTimeout(() => setStep('ASK_NAME'), 5000);
+    } else if (step === 'ASK_NAME') {
+      speak(t.askName);
+    } else if (step === 'ASK_DOB') {
+      speak(t.askDob);
+    } else if (step === 'ASK_GENDER') {
+      speak(t.askGender);
+    } else if (step === 'ASK_LEFT_PALM') {
+      speak(t.askLeft);
+    } else if (step === 'ASK_RIGHT_PALM') {
+      speak(t.askRight);
+    }
+  }, [step, language, speak]);
+
+  const processReading = async () => {
+    setStep('READING');
+    setIsProcessing(true);
+    speak(t.reading);
+    
+    try {
+      const reading = await getOracleReading(userData, language);
+      setResult(reading);
+      setStep('RESULTS');
+      
+      // Save to local storage
+      const savedReadings = JSON.parse(localStorage.getItem('oracle_readings') || '[]');
+      savedReadings.push({
+        date: new Date().toISOString(),
+        userData: { ...userData, leftPalm: null, rightPalm: null }, // Don't save large images
+        result: reading
+      });
+      localStorage.setItem('oracle_readings', JSON.stringify(savedReadings.slice(-10))); // Keep last 10
+
+      // Narrate the results
+      const fullText = `${reading.personality}. ${reading.lifePath}. ${reading.destiny}`;
+      speak(fullText);
+    } catch (error) {
+      alert("The cosmic strings are tangled. Please try again.");
+      setStep('ASK_RIGHT_PALM');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const shareDestiny = () => {
+    if (!result) return;
+    const text = `My Destiny as revealed by the Divine Palm Oracle:\n\n${result.destiny}\n\nSeek your own fate at ${window.location.href}`;
+    if (navigator.share) {
+      navigator.share({
+        title: 'My Divine Destiny',
+        text: text,
+        url: window.location.href,
+      }).catch(console.error);
+    } else {
+      navigator.clipboard.writeText(text);
+      alert("Destiny copied to clipboard, seeker.");
+    }
+  };
+
+  const reset = () => {
+    setStep('LANGUAGE_SELECT');
+    setUserData({
+      name: '',
+      dob: '',
+      gender: 'Other',
+      leftPalm: null,
+      rightPalm: null,
+    });
+    setResult(null);
+  };
+
+  return (
+    <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-6 text-center">
+      <AnimatePresence mode="wait">
+        {step === 'LANGUAGE_SELECT' && (
+          <motion.div 
+            key="lang"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="glass-morphism p-8 max-w-md w-full"
+          >
+            <h2 className="text-3xl font-display text-mystic-gold mb-8">Choose your tongue</h2>
+            <div className="grid grid-cols-2 gap-4">
+              {(['en', 'ml', 'hi', 'ar'] as Language[]).map((lang) => (
+                <button
+                  key={lang}
+                  onClick={() => {
+                    setLanguage(lang);
+                    setStep('INTRO');
+                  }}
+                  className="p-4 rounded-xl border border-white/10 hover:bg-mystic-gold/20 hover:border-mystic-gold transition-all font-display"
+                >
+                  {lang === 'en' ? 'English' : lang === 'ml' ? 'മലയാളം' : lang === 'hi' ? 'हिन्दी' : 'العربية'}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {(step === 'INTRO' || step.startsWith('ASK_')) && (
+          <motion.div 
+            key="convo"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex flex-col items-center gap-8 w-full max-w-2xl"
+          >
+            <div className="dialogue-container">
+              <p className="oracle-voice">
+                {step === 'INTRO' ? t.welcome : 
+                 step === 'ASK_NAME' ? t.askName :
+                 step === 'ASK_DOB' ? t.askDob :
+                 step === 'ASK_GENDER' ? t.askGender :
+                 step === 'ASK_LEFT_PALM' ? t.askLeft :
+                 t.askRight}
+              </p>
+            </div>
+
+            {step === 'ASK_GENDER' && (
+              <div className="flex gap-4">
+                {['Male', 'Female', 'Other'].map((g) => (
+                  <button
+                    key={g}
+                    onClick={() => handleNext(g)}
+                    className="px-8 py-2 rounded-full border border-mystic-gold/25 text-text-muted hover:bg-mystic-gold hover:text-bg-deep transition-all uppercase tracking-widest text-xs"
+                  >
+                    {g}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {(step === 'ASK_LEFT_PALM' || step === 'ASK_RIGHT_PALM') && (
+              <div className="flex flex-col items-center gap-8">
+                <PalmUpload 
+                  label={step === 'ASK_LEFT_PALM' ? "Left Palm" : "Right Palm"}
+                  image={step === 'ASK_LEFT_PALM' ? userData.leftPalm : userData.rightPalm}
+                  onUpload={(b64) => setUserData(prev => ({ 
+                    ...prev, 
+                    [step === 'ASK_LEFT_PALM' ? 'leftPalm' : 'rightPalm']: b64 
+                  }))}
+                  onClear={() => setUserData(prev => ({ 
+                    ...prev, 
+                    [step === 'ASK_LEFT_PALM' ? 'leftPalm' : 'rightPalm']: null 
+                  }))}
+                />
+                {(step === 'ASK_LEFT_PALM' ? userData.leftPalm : userData.rightPalm) && (
+                  <button 
+                    onClick={() => handleNext()}
+                    className="px-10 py-3 bg-mystic-gold text-bg-deep font-display rounded-full hover:scale-105 transition-transform uppercase tracking-[0.2em] text-sm"
+                  >
+                    Proceed
+                  </button>
+                )}
+              </div>
+            )}
+
+            {step !== 'ASK_LEFT_PALM' && step !== 'ASK_RIGHT_PALM' && step !== 'ASK_GENDER' && step !== 'INTRO' && (
+              <div className="w-full max-w-md mt-8">
+                <div className="input-section">
+                  <div className="interaction-mode mb-4">
+                    <button 
+                      onClick={() => setInputMode('voice')}
+                      className={cn("mode-btn", inputMode === 'voice' && "active")}
+                    >
+                      🎤 Speak
+                    </button>
+                    <button 
+                      onClick={() => setInputMode('text')}
+                      className={cn("mode-btn", inputMode === 'text' && "active")}
+                    >
+                      ⌨️ Type
+                    </button>
+                  </div>
+
+                  <div className="w-full flex items-center gap-2 glass-morphism p-2">
+                    {inputMode === 'text' ? (
+                      <input 
+                        type="text"
+                        value={textInput}
+                        onChange={(e) => setTextInput(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && (handleNext(textInput), setTextInput(''))}
+                        placeholder={t.typePlaceholder}
+                        className="flex-1 bg-transparent border-none outline-none text-text-main px-4 py-2 font-georgia italic"
+                        autoFocus
+                      />
+                    ) : (
+                      <button 
+                        onClick={startListening}
+                        className={cn(
+                          "flex-1 text-left px-4 py-2 text-text-muted font-georgia italic",
+                          isListening && "text-mystic-gold animate-pulse"
+                        )}
+                      >
+                        {isListening ? "Listening to the universe..." : "Tap to speak..."}
+                      </button>
+                    )}
+
+                    {inputMode === 'text' && (
+                      <button 
+                        onClick={() => { handleNext(textInput); setTextInput(''); }}
+                        className="p-3 text-mystic-gold hover:bg-white/5 rounded-full"
+                      >
+                        <Send size={20} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {step === 'READING' && (
+          <motion.div 
+            key="reading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex flex-col items-center gap-6"
+          >
+            <div className="w-16 h-16 border-4 border-mystic-gold border-t-transparent rounded-full animate-spin" />
+            <p className="text-2xl font-display text-mystic-gold animate-pulse">{t.reading}</p>
+          </motion.div>
+        )}
+
+        {step === 'RESULTS' && result && (
+          <motion.div 
+            key="results"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="glass-morphism p-8 max-w-4xl w-full max-h-[80vh] overflow-y-auto custom-scrollbar"
+          >
+            <h2 className="text-4xl font-display text-mystic-gold mb-8 border-b border-mystic-gold/20 pb-4">
+              Thy Destiny Revealed
+            </h2>
+            
+            <div className="space-y-8 text-left">
+              <ResultSection title="Inner Soul" content={result.personality} delay={0.2} />
+              <ResultSection title="The Journey" content={result.lifePath} delay={0.4} />
+              <ResultSection title="Heart's Echo" content={result.love} delay={0.6} />
+              <ResultSection title="Worldly Purpose" content={result.career} delay={0.8} />
+              <ResultSection title="Final Fate" content={result.destiny} delay={1.0} />
+              <ResultSection title="Cosmic Whispers" content={result.warnings} delay={1.2} />
+            </div>
+
+            <div className="mt-12 flex flex-wrap justify-center gap-4">
+              <button 
+                onClick={reset}
+                className="flex items-center gap-2 px-6 py-3 border border-mystic-gold text-mystic-gold rounded-full hover:bg-mystic-gold hover:text-black transition-all"
+              >
+                <RefreshCw size={20} />
+                {t.reset}
+              </button>
+              <button 
+                onClick={shareDestiny}
+                className="flex items-center gap-2 px-6 py-3 bg-mystic-gold text-black rounded-full hover:scale-105 transition-transform"
+              >
+                <Share2 size={20} />
+                {t.share}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+const ResultSection: React.FC<{ title: string; content: string; delay: number }> = ({ title, content, delay }) => (
+  <motion.div 
+    initial={{ opacity: 0, x: -20 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ delay }}
+    className="space-y-2"
+  >
+    <h3 className="text-mystic-gold font-display uppercase tracking-widest text-sm">{title}</h3>
+    <p className="text-lg font-serif leading-relaxed text-white/80">{content}</p>
+  </motion.div>
+);

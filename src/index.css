@@ -1,0 +1,71 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap');
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Libre Baskerville", serif;
+  --font-display: "Cinzel", serif;
+  --font-georgia: "Georgia", serif;
+
+  --color-bg-deep: #050208;
+  --color-bg-purple: #1a0b2e;
+  --color-mystic-gold: #d4af37;
+  --color-gold-glow: rgba(212, 175, 55, 0.4);
+  --color-spirit-blue: #a0c4ff;
+  --color-text-main: #e0d8ff;
+  --color-text-muted: #8b7ea5;
+  --color-glass: rgba(255, 255, 255, 0.03);
+}
+
+@layer base {
+  body {
+    @apply bg-bg-deep text-text-main font-georgia overflow-hidden;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+.animate-breathe {
+  animation: breathe 8s ease-in-out infinite;
+}
+
+.glass-morphism {
+  @apply bg-glass backdrop-blur-xl border border-mystic-gold/25 rounded-3xl;
+}
+
+.mystical-background {
+  background: radial-gradient(circle at 50% 40%, #1a0b2e 0%, #050208 70%);
+}
+
+.stars {
+  background-image: radial-gradient(circle, #fff 1px, transparent 1px);
+  background-size: 100px 100px;
+}
+
+.oracle-voice {
+  @apply text-3xl font-georgia italic leading-relaxed;
+  text-shadow: 0 0 20px rgba(224, 216, 255, 0.4);
+}
+
+
